@@ -1,37 +1,27 @@
 import multer from "multer";
-import path from "path";
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, path.join(__dirname, "..", "..", "public", "images"));
-  },
-  filename: (req, file, cb) => {
-    cb(
-      null,
-      file.fieldname + "-" + Date.now() + path.extname(file.originalname)
-    );
-  },
-});
+// Gunakan memory storage untuk Vercel
+const storage = multer.memoryStorage();
 
-const fileFilter = (req: any, file: any, cb: any) => {
-  if (
-    file.mimetype === "image/png" ||
-    file.mimetype === "image/jpg" ||
-    file.mimetype === "image/jpeg" ||
-    file.mimetype === "image/gif"
-  ) {
+const fileFilter = (
+  req: any,
+  file: Express.Multer.File,
+  cb: multer.FileFilterCallback
+) => {
+  // Allow only image files
+  if (file.mimetype.startsWith("image/")) {
     cb(null, true);
   } else {
-    cb(new Error("Jenis file tidak didukung!"), false);
+    cb(new Error("Only image files are allowed!"));
   }
 };
 
-const uploadMiddleware = multer({
+const upload = multer({
   storage: storage,
   limits: {
-    fileSize: 1024 * 1024 * 5,
+    fileSize: 10 * 1024 * 1024, // 10MB limit
   },
   fileFilter: fileFilter,
 });
 
-export default uploadMiddleware;
+export default upload;

@@ -11,10 +11,40 @@ class PlantRouter {
   }
 
   private routes = (): void => {
+    // Create plant
     this.plantRouter.post(
       "/",
-      uploadMiddleware.array("images", 10),
+      (req, res, next) => {
+        uploadMiddleware.array("images", 10)(req, res, (err) => {
+          if (err) {
+            console.error("Multer error:", err);
+            return res.status(400).json({
+              status: 400,
+              message: `Upload error: ${err.message}`,
+            });
+          }
+          next();
+        });
+      },
       PlantController.create
+    );
+
+    // Update plant
+    this.plantRouter.put(
+      "/:plantId",
+      (req, res, next) => {
+        uploadMiddleware.array("images", 1)(req, res, (err) => {
+          if (err) {
+            console.error("Multer error:", err);
+            return res.status(400).json({
+              status: 400,
+              message: `Upload error: ${err.message}`,
+            });
+          }
+          next();
+        });
+      },
+      PlantController.updateById
     );
 
     this.plantRouter.get("/", PlantController.getAll);
