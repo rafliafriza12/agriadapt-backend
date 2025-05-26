@@ -225,37 +225,92 @@ class PlantController {
     }
   };
 
-  public getAll = async (req: Request, res: Response): Promise<void> => {
+  public getPlants = async (req: Request, res: Response): Promise<void> => {
     try {
-      const page: number = parseInt(req.query.page as string) || 1;
-      const limit: number = parseInt(req.query.limit as string) || 10;
-      const skip: number = (page - 1) * limit;
-      const total: number = await Plants.countDocuments({});
+      const {
+        plainType,
+        plantingSeason,
+        soilType,
+        waterAvailability,
+        page,
+        limit,
+      }: {
+        plainType?: string;
+        plantingSeason?: string;
+        soilType?: string;
+        waterAvailability?: string;
+        page?: string;
+        limit?: string;
+      } = req.query;
 
-      const plants: TPlant[] = await Plants.find({})
-        .skip(skip)
-        .limit(limit)
-        .sort({ createdAt: -1 });
+      // Check if filtering is requested
+      const isFiltering =
+        plainType || plantingSeason || soilType || waterAvailability;
 
-      if (plants.length === 0) {
-        res.status(404).json({
-          status: 404,
-          message: "Data tanaman tidak ditemukan",
+      if (isFiltering) {
+        // Validate that all filter parameters are provided
+        if (!plainType || !plantingSeason || !soilType || !waterAvailability) {
+          res.status(400).json({
+            status: 400,
+            message: "Seluruh filter harus diisi",
+          });
+          return;
+        }
+
+        // Filter plants based on criteria
+        const filteredPlants: TPlant[] = await Plants.find({
+          plainType,
+          plantingSeason,
+          soilType,
+          waterAvailability,
+        });
+
+        if (filteredPlants.length === 0) {
+          res.status(404).json({
+            status: 404,
+            message: "Tidak ditemukan tumbuhan yang cocok",
+          });
+          return;
+        }
+
+        res.status(200).json({
+          status: 200,
+          data: filteredPlants,
+          message: "Tumbuhan yang cocok ditemukan",
+        });
+        return;
+      } else {
+        // Get all plants with pagination
+        const pageNum: number = parseInt(page as string) || 1;
+        const limitNum: number = parseInt(limit as string) || 10;
+        const skip: number = (pageNum - 1) * limitNum;
+        const total: number = await Plants.countDocuments({});
+
+        const plants: TPlant[] = await Plants.find({})
+          .skip(skip)
+          .limit(limitNum)
+          .sort({ createdAt: -1 });
+
+        if (plants.length === 0) {
+          res.status(404).json({
+            status: 404,
+            message: "Data tanaman tidak ditemukan",
+          });
+          return;
+        }
+
+        res.status(200).json({
+          status: 200,
+          message: "Data tumbuhan ditemukan",
+          data: plants,
+          currentPage: pageNum,
+          totalData: total,
+          totalPages: Math.ceil(total / limitNum),
         });
         return;
       }
-
-      res.status(200).json({
-        status: 200,
-        message: "Data tumbuhan ditemukan",
-        data: plants,
-        currentPage: page,
-        totalData: total,
-        totalPages: Math.ceil(total / limit),
-      });
-      return;
     } catch (error: any) {
-      console.error("Error in getAll plants:", error);
+      console.error("Error in getPlants:", error);
       res.status(500).json({
         status: 500,
         message: "Error server internal",

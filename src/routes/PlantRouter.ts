@@ -47,7 +47,7 @@ class PlantRouter {
       PlantController.updateById
     );
 
-    this.plantRouter.get("/", PlantController.getAll);
+    this.plantRouter.get("/", PlantController.getPlants);
     this.plantRouter.get("/:plantId", PlantController.getByPlantId);
     this.plantRouter.delete("/:plantId", PlantController.deleteById);
   };
